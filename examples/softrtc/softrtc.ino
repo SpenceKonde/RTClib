@@ -1,12 +1,17 @@
 // Date and time functions using just software, based on millis() & timer
 
 #include <Arduino.h>
-#include <Wire.h>         // this #include still required because the RTClib depends on it
-#include "RTClib.h"
+// Date and time functions using a DS1307 RTC connected via I2C and Wire lib
+#include <RTClib_Tiny.h>
 
-#if defined(ARDUINO_ARCH_SAMD)  // for Zero, output on USB Serial console, remove line below if using programming port to program the Zero!
-  #define Serial SerialUSB
-#endif
+//#include <Wire.h>
+//#include <TinyWireM.h>
+#include <SoftI2CMaster.h> 
+//comment out all but one of the above library includes. 
+
+//if using SoftI2CMaster (ie, on tiny841 or 828), uncomment this, otherwise comment out. 
+SoftI2CMaster softi2c=SoftI2CMaster( 7, 2, 0 ); //sclPin=7, sdaPin=2
+
 
 RTC_Millis rtc;
 
