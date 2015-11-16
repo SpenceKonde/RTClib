@@ -1,5 +1,6 @@
 // Code by JeeLabs http://news.jeelabs.org/code/
 // Released to the public domain! Enjoy!
+// Modified by Spence Konde for compatibility with devices using TinyWireM or SoftI2CMaster instead of Wire library. 
 
 #ifndef _RTCLIB_H_
 #define _RTCLIB_H_
