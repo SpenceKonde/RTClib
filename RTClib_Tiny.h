@@ -3,6 +3,20 @@
 
 #ifndef _RTCLIB_H_
 #define _RTCLIB_H_
+#ifdef TWSR
+  #include <Wire.h>
+  #define WIRENAME Wire
+#else
+  #ifdef USIDR
+    #define WIRENAME TinyWireM
+    #include <TinyWireM.h>
+  #else
+    #define SOFTI2C
+    #define WIRENAME softi2c
+    #include <SoftI2CMaster.h>
+    extern SoftI2CMaster softi2c;
+  #endif
+#endif
 
 #include <Arduino.h>
 class TimeSpan;
