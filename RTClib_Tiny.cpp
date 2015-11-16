@@ -1,19 +1,10 @@
 // Code by JeeLabs http://news.jeelabs.org/code/
 // Released to the public domain! Enjoy!
+// Modified by Spence Konde for compatibility with devices using TinyWireM or SoftI2CMaster instead of Wire library. 
 
-#include <Wire.h>
-#include "RTClib.h"
-#ifdef __AVR__
- #include <avr/pgmspace.h>
-#elif defined(ESP8266)
- #include <pgmspace.h>
-#elif defined(ARDUINO_ARCH_SAMD)
-// nothing special needed
-#elif defined(ARDUINO_SAM_DUE)
- #define PROGMEM
- #define pgm_read_byte(addr) (*(const unsigned char *)(addr))
- #define Wire Wire1
-#endif
+#include <Arduino.h>
+#include "RTClib_Tiny.h"
+#include <avr/pgmspace.h>
 
 #define DS1307_ADDRESS  0x68
 #define DS1307_CONTROL  0x07
@@ -22,16 +13,6 @@
 
 #define SECONDS_FROM_1970_TO_2000 946684800
 
-#if (ARDUINO >= 100)
- #include <Arduino.h> // capital A so it is error prone on case-sensitive filesystems
- // Macro to deal with the difference in I2C write functions from old and new Arduino versions.
- #define _I2C_WRITE write
- #define _I2C_READ  read
-#else
- #include <WProgram.h>
- #define _I2C_WRITE send
- #define _I2C_READ  receive
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // utility code, some of this could be exposed in the DateTime API if needed
@@ -224,46 +205,48 @@ static uint8_t bcd2bin (uint8_t val) { return val - 6 * (val >> 4); }
 static uint8_t bin2bcd (uint8_t val) { return val + 6 * (val / 10); }
 
 boolean RTC_DS1307::begin(void) {
-  Wire.begin();
+	#ifndef SOFTI2C
+	WIRENAME.begin();
+	#endif
   return true;
 }
 
 uint8_t RTC_DS1307::isrunning(void) {
-  Wire.beginTransmission(DS1307_ADDRESS);
-  Wire._I2C_WRITE((byte)0);
-  Wire.endTransmission();
+  WIRENAME.beginTransmission(DS1307_ADDRESS);
+  WIRENAME.write((byte)0);
+  WIRENAME.endTransmission();
 
-  Wire.requestFrom(DS1307_ADDRESS, 1);
-  uint8_t ss = Wire._I2C_READ();
+  WIRENAME.requestFrom(DS1307_ADDRESS, 1);
+  uint8_t ss = WIRENAME.read();
   return !(ss>>7);
 }
 
 void RTC_DS1307::adjust(const DateTime& dt) {
-  Wire.beginTransmission(DS1307_ADDRESS);
-  Wire._I2C_WRITE((byte)0); // start at location 0
-  Wire._I2C_WRITE(bin2bcd(dt.second()));
-  Wire._I2C_WRITE(bin2bcd(dt.minute()));
-  Wire._I2C_WRITE(bin2bcd(dt.hour()));
-  Wire._I2C_WRITE(bin2bcd(0));
-  Wire._I2C_WRITE(bin2bcd(dt.day()));
-  Wire._I2C_WRITE(bin2bcd(dt.month()));
-  Wire._I2C_WRITE(bin2bcd(dt.year() - 2000));
-  Wire.endTransmission();
+  WIRENAME.beginTransmission(DS1307_ADDRESS);
+  WIRENAME.write((byte)0); // start at location 0
+  WIRENAME.write(bin2bcd(dt.second()));
+  WIRENAME.write(bin2bcd(dt.minute()));
+  WIRENAME.write(bin2bcd(dt.hour()));
+  WIRENAME.write(bin2bcd(0));
+  WIRENAME.write(bin2bcd(dt.day()));
+  WIRENAME.write(bin2bcd(dt.month()));
+  WIRENAME.write(bin2bcd(dt.year() - 2000));
+  WIRENAME.endTransmission();
 }
 
 DateTime RTC_DS1307::now() {
-  Wire.beginTransmission(DS1307_ADDRESS);
-  Wire._I2C_WRITE((byte)0);	
-  Wire.endTransmission();
+  WIRENAME.beginTransmission(DS1307_ADDRESS);
+  WIRENAME.write((byte)0);	
+  WIRENAME.endTransmission();
 
-  Wire.requestFrom(DS1307_ADDRESS, 7);
-  uint8_t ss = bcd2bin(Wire._I2C_READ() & 0x7F);
-  uint8_t mm = bcd2bin(Wire._I2C_READ());
-  uint8_t hh = bcd2bin(Wire._I2C_READ());
-  Wire._I2C_READ();
-  uint8_t d = bcd2bin(Wire._I2C_READ());
-  uint8_t m = bcd2bin(Wire._I2C_READ());
-  uint16_t y = bcd2bin(Wire._I2C_READ()) + 2000;
+  WIRENAME.requestFrom(DS1307_ADDRESS, 7);
+  uint8_t ss = bcd2bin(WIRENAME.read() & 0x7F);
+  uint8_t mm = bcd2bin(WIRENAME.read());
+  uint8_t hh = bcd2bin(WIRENAME.read());
+  WIRENAME.read();
+  uint8_t d = bcd2bin(WIRENAME.read());
+  uint8_t m = bcd2bin(WIRENAME.read());
+  uint16_t y = bcd2bin(WIRENAME.read()) + 2000;
   
   return DateTime (y, m, d, hh, mm, ss);
 }
@@ -271,44 +254,44 @@ DateTime RTC_DS1307::now() {
 Ds1307SqwPinMode RTC_DS1307::readSqwPinMode() {
   int mode;
 
-  Wire.beginTransmission(DS1307_ADDRESS);
-  Wire._I2C_WRITE(DS1307_CONTROL);
-  Wire.endTransmission();
+  WIRENAME.beginTransmission(DS1307_ADDRESS);
+  WIRENAME.write(DS1307_CONTROL);
+  WIRENAME.endTransmission();
   
-  Wire.requestFrom((uint8_t)DS1307_ADDRESS, (uint8_t)1);
-  mode = Wire._I2C_READ();
+  WIRENAME.requestFrom((uint8_t)DS1307_ADDRESS, (uint8_t)1);
+  mode = WIRENAME.read();
 
   mode &= 0x93;
   return static_cast<Ds1307SqwPinMode>(mode);
 }
 
 void RTC_DS1307::writeSqwPinMode(Ds1307SqwPinMode mode) {
-  Wire.beginTransmission(DS1307_ADDRESS);
-  Wire._I2C_WRITE(DS1307_CONTROL);
-  Wire._I2C_WRITE(mode);
-  Wire.endTransmission();
+  WIRENAME.beginTransmission(DS1307_ADDRESS);
+  WIRENAME.write(DS1307_CONTROL);
+  WIRENAME.write(mode);
+  WIRENAME.endTransmission();
 }
 
 void RTC_DS1307::readnvram(uint8_t* buf, uint8_t size, uint8_t address) {
   int addrByte = DS1307_NVRAM + address;
-  Wire.beginTransmission(DS1307_ADDRESS);
-  Wire._I2C_WRITE(addrByte);
-  Wire.endTransmission();
+  WIRENAME.beginTransmission(DS1307_ADDRESS);
+  WIRENAME.write(addrByte);
+  WIRENAME.endTransmission();
   
-  Wire.requestFrom((uint8_t) DS1307_ADDRESS, size);
+  WIRENAME.requestFrom((uint8_t) DS1307_ADDRESS, size);
   for (uint8_t pos = 0; pos < size; ++pos) {
-    buf[pos] = Wire._I2C_READ();
+    buf[pos] = WIRENAME.read();
   }
 }
 
 void RTC_DS1307::writenvram(uint8_t address, uint8_t* buf, uint8_t size) {
   int addrByte = DS1307_NVRAM + address;
-  Wire.beginTransmission(DS1307_ADDRESS);
-  Wire._I2C_WRITE(addrByte);
+  WIRENAME.beginTransmission(DS1307_ADDRESS);
+  WIRENAME.write(addrByte);
   for (uint8_t pos = 0; pos < size; ++pos) {
-    Wire._I2C_WRITE(buf[pos]);
+    WIRENAME.write(buf[pos]);
   }
-  Wire.endTransmission();
+  WIRENAME.endTransmission();
 }
 
 uint8_t RTC_DS1307::readnvram(uint8_t address) {
