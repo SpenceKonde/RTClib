@@ -1,5 +1,7 @@
 This is a fork of Adafruit's fork of JeeLab's fantastic real time clock library for Arduino, adding support for AVR boards that don't support hardware I2C, or do so only through the USI. 
 
+At present no testing of any sort has been conducted, this is expected to change within days. 
+
 # Installation #
 
 To download. click the DOWNLOADS button to the right, and rename the uncompressed folder RTClib_Tiny.
